@@ -1,17 +1,26 @@
 {
-  "uuid": "f32729ce-938b-48f6-a731-1ae69c39f791",
-  "shortName": "tfl4pebble",
-  "longName": "tfl4pebble",
-  "companyName": "MakeAwesomeHappen",
-  "versionCode": 1,
-  "versionLabel": "1.0.0",
+  "uuid": "d8fb6560-56cf-11e3-949a-0800200c9a66",
+  "shortName": "TfL 4 Pebble",
+  "longName": "TfL for Peble",
+  "companyName": "com.jonasbergler",
+  "versionCode": 2,
+  "versionLabel": "2.0.0",
   "watchapp": {
     "watchface": false
   },
   "appKeys": {
-    "dummy": 0
+    "cmdFetch": 1000,
+    "bikeName": 1001,
+    "bikeInfo": 1002,
+    "bikeId": 1003
   },
   "resources": {
-    "media": []
+    "media": [
+      {
+        "name": "MENU_ICON",
+        "type": "png",
+        "file": "images/menu.png"
+      }
+    ]
   }
 }
