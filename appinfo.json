@@ -1,0 +1,17 @@
+{
+  "uuid": "f32729ce-938b-48f6-a731-1ae69c39f791",
+  "shortName": "tfl4pebble",
+  "longName": "tfl4pebble",
+  "companyName": "MakeAwesomeHappen",
+  "versionCode": 1,
+  "versionLabel": "1.0.0",
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
