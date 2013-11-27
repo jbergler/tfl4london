@@ -1,3 +1,15 @@
+var CMD = {
+	QUIT:		1,
+	READY:		2,
+	WINDOW:		3,
+	GET_BIKES:	100
+};
+
+var WINDOW = {
+	MAIN_MENU: 0,
+	BIKE_LIST: 1
+};
+
 var apiBase = "http://tfl.jonasbergler.com";
 var DB = {};
 DB.location = {"speed":null,"heading":null,"altitudeAccuracy":null,"accuracy":27,"altitude":null,"longitude":-0.141718,"latitude":51.517633};
@@ -8,23 +20,29 @@ Pebble.addEventListener("ready", function(e) {
 });
 
 Pebble.addEventListener("appmessage", function(e) {
-	console.log("Message from device");
-	console.log("e => " + JSON.stringify(e));
+	console.log("Message from device: " + JSON.stringify(e.payload));
 
-	if (e.payload.cmdFetch) {
-		if (DB.bikes && DB.bikes.length > 0) {
-			if (e.payload.bikeId != "undefined" && e.payload.bikeId < DB.bikes.length ) {
-				Pebble.sendAppMessage(DB.bikes[e.payload.bikeId]);
-				console.log("CMD=>BIKES MSG=>" + JSON.stringify(DB.bikes[e.payload.bikeId]));
-			}
-			else
-			{
-				console.log("CMD=>BIKES but we don't have info on bikeId " + e.payload.bikeId);
-			}
-		}
+	switch (e.payload.cmd) {
+		case CMD.READY:
+			console.log("Watch ready.");
+			Pebble.sendAppMessage({ 'cmd': CMD.READY });
+			break;
+
+		case CMD.WINDOW:
+			console.log("Window " + e.payload.window + " selected");
+			Pebble.sendAppMessage({ 'cmd': CMD.WINDOW, 'window': e.payload.window });
+			break;
+
+		case CMD.GET_BIKES:
+			var bike = DB.bikes[e.payload.bikeId];
+			bike.cmd = CMD.GET_BIKES;
+			console.log("Sent " + JSON.stringify(bike));
+			console.log("CMD=>GET_BIKES BIKE_ID=>" + e.payload.bikeId);
+			Pebble.sendAppMessage(bike);
+			break;
 	}
 });
-
+console.log("Pebble.addEventListener() calls complete.");
 
 function registerWebapp(e) {
 	console.log("registerWebapp()");
@@ -43,11 +61,9 @@ function fetchBikeInfo(coords) {
 	req.open('GET', url, true);
 	req.onload = function(e) {
 		if (req.readyState == 4) {
-			console.log("AJAX: " + req.status);
+			console.log("AJAX Response[" + req.status + "/" + url + "]: " + req.responseText);
 			if(req.status == 200) {
-				console.log(req.responseText);
 				data = JSON.parse(req.responseText);
-
 				if (data && data.length > 0) {
 					DB.bikes = [];
 					for(i = 0; i < data.length; i++) {
@@ -58,8 +74,6 @@ function fetchBikeInfo(coords) {
 				        }
 				        DB.bikes[i] = msg;
 					}
-					Pebble.sendAppMessage(DB.bikes[0]);
-					console.log("CMD=>BIKES MSG=>" + JSON.stringify(DB.bikes[0]));
 				}
 				// var temperature, icon, city;
 				// if (response && response.list && response.list.length > 0) {

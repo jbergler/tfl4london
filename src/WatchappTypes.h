@@ -1,0 +1,24 @@
+#ifndef WATCHAPP_TYPES_H_
+#define WATCHAPP_TYPES_H_
+
+enum KEY {
+    KEY_CMD = 1,
+    KEY_WINDOW = 2,
+    KEY_BIKES_NAME = 1001,
+    KEY_BIKES_INFO = 1002,
+    KEY_BIKES_ID   = 1003
+};
+
+enum CMD {
+	CMD_QUIT = 1,
+	CMD_READY = 2,
+	CMD_WINDOW = 3,
+	CMD_FETCH_BIKES = 100
+};
+
+enum WINDOW {
+	WINDOW_MAIN_MENU = 0,
+	WINDOW_BIKE_LIST = 1
+};
+
+#endif /* WATCHAPP_TYPES_H_ */

@@ -9,7 +9,8 @@
     "watchface": false
   },
   "appKeys": {
-    "cmdFetch": 1000,
+    "cmd": 1,
+    "window": 2,
     "bikeName": 1001,
     "bikeInfo": 1002,
     "bikeId": 1003
