@@ -75,11 +75,10 @@ void timerTriggered(void* context)
 	}
 }
 
-
 int main(void) {
 	app_message_register_inbox_received(received_data);
 	app_message_register_outbox_sent(data_sent);
-	app_message_open(128, 64);
+	app_message_open(768, 512);
 
 	switchWindow(WINDOW_MAIN_MENU);
 

@@ -6,7 +6,8 @@ enum KEY {
     KEY_WINDOW = 2,
     KEY_BIKES_NAME = 1001,
     KEY_BIKES_INFO = 1002,
-    KEY_BIKES_ID   = 1003
+    KEY_BIKES_ID   = 1003,
+    KEY_BIKES_URL  = 1004
 };
 
 enum CMD {

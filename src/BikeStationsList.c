@@ -2,6 +2,8 @@
 #include <pebble_fonts.h>
 #include "Watchapp.h"
 #include "WatchappTypes.h"
+#include "LoadingWindow.h"
+#include "ImageWindow.h"
 
 Window* listWindow;
 MenuLayer* listMenuLayer;
@@ -15,6 +17,7 @@ typedef struct {
     int id;
     char name[MAX_LENGTH];
     char info[MAX_LENGTH];
+    char url[MAX_LENGTH];
 } BikeStation;
 
 BikeStation bike_station_list[MAX_STATIONS];
@@ -27,11 +30,10 @@ BikeStation* bike_station_list_get(int index)
         return NULL;
     }
 
-    APP_LOG(APP_LOG_LEVEL_INFO, "bike_station_list_get(%i) return *BikeStation{id = %i, name = %s, info = %s}", index, bike_station_list[index].id, bike_station_list[index].name, bike_station_list[index].info);
     return &bike_station_list[index];
 }
 
-void bike_station_list_append(uint8_t id, char* name, char* info)
+void bike_station_list_append(uint8_t id, char* name, char* info, char* url)
 {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "bike_station_list_append(%i, %s, %s)", id, name, info);
 
@@ -43,39 +45,27 @@ void bike_station_list_append(uint8_t id, char* name, char* info)
     bike_station_list[bike_station_list_size].id = id;
     strcpy(bike_station_list[bike_station_list_size].name, name);
     strcpy(bike_station_list[bike_station_list_size].info, info);
+    strcpy(bike_station_list[bike_station_list_size].url, url);
 
     // Increment list lize
     bike_station_list_size++;
 }
 
 
-void requestNotification(int id)
+void fetchBikeInfo()
 {
-	//APP_LOG(APP_LOG_LEVEL_DEBUG, "requestNotification(%i)", id);
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "fetchBikeInfo(CMD => FETCH_BIKES)");
 
 	DictionaryIterator *iterator;
-	int begin = app_message_outbox_begin(&iterator);
-	int key1 = dict_write_uint8(iterator, KEY_CMD, CMD_FETCH_BIKES);
-	int key2 = dict_write_uint8(iterator, KEY_BIKES_ID, id);
-	
-	int sent = app_message_outbox_send();
-
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "send begin=%i key1=%i key2=%i sent=%i", begin, key1, key2, sent);
+    app_message_outbox_begin(&iterator);
+    dict_write_uint8(iterator, KEY_CMD, CMD_FETCH_BIKES);
+    //dict_write_uint8(iterator, KEY_CMD, CMD_FETCH_IMAGE);
+    app_message_outbox_send();
 
 	app_comm_set_sniff_interval(SNIFF_INTERVAL_REDUCED);
 	app_comm_set_sniff_interval(SNIFF_INTERVAL_NORMAL);
 
-	ending = true;
-}
-
-void requestAdditionalEntries()
-{
-	if (ending) {
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "requestAdditionalEntries() ending => true");
-		return;
-	}
-
-	requestNotification(bike_station_list_size);
+	ending = false;
 }
 
 uint16_t menu_get_num_sections_callback(MenuLayer *me, void *data) {
@@ -87,7 +77,7 @@ uint16_t menu_get_num_rows_callback(MenuLayer *me, uint16_t section_index, void 
 }
 
 int16_t menu_get_row_height_callback(MenuLayer *me,  MenuIndex *cell_index, void *data) {
-	return 40;
+	return 44;
 }
 
 void menu_pos_changed(struct MenuLayer *menu_layer, MenuIndex new_index, MenuIndex old_index, void *callback_context)
@@ -106,7 +96,6 @@ void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *c
         return;
     }
 
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "draw_row_callback() item => BikeStation{id = %i, name = %s, info = %s}", bike_station_list[index].id, bike_station_list[index].name, bike_station_list[index].info);
     menu_cell_basic_draw(ctx, cell_layer, item->name, item->info, NULL);
 
 	// graphics_context_set_text_color(ctx, GColorBlack);
@@ -116,25 +105,32 @@ void menu_draw_row_callback(GContext* ctx, const Layer *cell_layer, MenuIndex *c
 
 }
 
-
 void menu_select_callback(MenuLayer *me, MenuIndex *cell_index, void *data) {
-	//sendpickedEntry(cell_index->row, 0);
+    BikeStation *station = bike_station_list_get(cell_index->row); 
+    imagewindow_init(station->url);
 }
 
 void receivedEntries(DictionaryIterator* data)
 {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "in_received_handler()");
-    Tuple *name = dict_find(data, KEY_BIKES_NAME);
-    Tuple *info = dict_find(data, KEY_BIKES_INFO);
-    Tuple *id = dict_find(data, KEY_BIKES_ID);
+	Tuple *idP = dict_find(data, KEY_BIKES_ID);
+	int id = -1;
 
-    if (name && info && id) {
-        bike_station_list_append(id->value->uint8, name->value->cstring, info->value->cstring);
-    }
+	if (idP && (id = idP->value->uint8) == 255) {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "receivedEntries() id=>255 ... we must be done");
+        ending = true;
+        menu_layer_reload_data(listMenuLayer);
+        hideLoadingWindow((Layer *) listMenuLayer);
+	}
+	else {
+		APP_LOG(APP_LOG_LEVEL_DEBUG, "receivedEntries() id=>%i ... processing entry", id);
+		Tuple *name = dict_find(data, KEY_BIKES_NAME);
+		Tuple *info = dict_find(data, KEY_BIKES_INFO);
+        Tuple *url = dict_find(data, KEY_BIKES_URL);
 
-	menu_layer_reload_data(listMenuLayer);
-	ending = false;
-	requestAdditionalEntries();
+	    if (name && info && id >= 0) {
+	        bike_station_list_append(id, name->value->cstring, info->value->cstring, url->value->cstring);
+	    }
+	}
 }
 
 void list_data_received(int cmd, DictionaryIterator* data)
@@ -148,7 +144,8 @@ void list_data_received(int cmd, DictionaryIterator* data)
 			break;
 	}
 }
-////from here.
+
+
 
 void list_window_load(Window *me) {
 	setCurWindow(WINDOW_BIKE_LIST);
@@ -163,9 +160,9 @@ void init_notification_list_window()
 	listWindow = window_create();
 	Layer* topLayer = window_get_root_layer(listWindow);
 
+	// Build menu
 	listMenuLayer = menu_layer_create(GRect(0, 0, 144, 168 - 16));
 
-	// Set all the callbacks for the menu layer
 	menu_layer_set_callbacks(listMenuLayer, NULL, (MenuLayerCallbacks){
 		.get_num_sections = menu_get_num_sections_callback,
 		.get_num_rows = menu_get_num_rows_callback,
@@ -176,8 +173,10 @@ void init_notification_list_window()
 	});
 
 	menu_layer_set_click_config_onto_window(listMenuLayer, listWindow);
-
 	layer_add_child(topLayer, (Layer*) listMenuLayer);
+
+    initLoadingWindow(topLayer);
+	showLoadingWindow((Layer*) listMenuLayer);
 
 	window_set_window_handlers(listWindow, (WindowHandlers){
 		.appear = list_window_load,
@@ -186,5 +185,5 @@ void init_notification_list_window()
 	});
 
 	window_stack_push(listWindow, true /* Animated */);
-	requestAdditionalEntries();
+	fetchBikeInfo();
 }

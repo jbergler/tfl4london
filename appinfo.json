@@ -1,9 +1,9 @@
 {
-  "uuid": "d8fb6560-56cf-11e3-949a-0800200c9a66",
+  "uuid": "d8fb6560-56cf-11e3-949a-0800200c9a68",
   "shortName": "TfL 4 Pebble",
-  "longName": "TfL for Peble",
+  "longName": "TfL for Pebble",
   "companyName": "com.jonasbergler",
-  "versionCode": 2,
+  "versionCode": 5,
   "versionLabel": "2.0.0",
   "watchapp": {
     "watchface": false
@@ -13,7 +13,13 @@
     "window": 2,
     "bikeName": 1001,
     "bikeInfo": 1002,
-    "bikeId": 1003
+    "bikeId": 1003,
+    "bikeUrl": 1004,
+    "netimageCmd": 51,
+    "netimageUrl": 52,
+    "netimageData": 53,
+    "netimageSize": 54,
+    "netimageChunkSize": 55
   },
   "resources": {
     "media": [
